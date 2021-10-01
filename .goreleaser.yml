@@ -1,0 +1,32 @@
+env:
+  - CGO_ENABLED=0
+  - GO111MODULE=on
+  - GOPROXY=https://proxy.golang.org
+before:
+  hooks:
+    #- go mod tidy
+builds:
+- ldflags:
+  - -X git.psu.edu/swe-golang/buildversion.commit={{.ShortCommit}}
+  - -X git.psu.edu/swe-golang/buildversion.version={{.Version}}
+  - -X git.psu.edu/swe-golang/buildversion.buildDate={{.Date}}
+  flags:
+  - -trimpath
+  goos:
+  - linux
+  goarch:
+  - amd64
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}-SNAPSHOT-{{ .ShortCommit }}"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'
+    - '^ci:'
+    - Merge pull request
+    - Merge branch
+
