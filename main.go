@@ -36,6 +36,10 @@ type CloudConfigUser struct {
 	Sudo              string   `yaml:"sudo"`
 }
 
+type MetaData struct {
+	LocalHostname string `yaml:"local-hostname"`
+}
+
 const (
 	ConfigDriveLabel = "cidata"
 	UserDataFile     = "user-data"
@@ -44,27 +48,70 @@ const (
 
 func main() {
 	log.Print("Starting rancher-flatcar-cloudinit")
-	err := process()
+
+	log.Printf("Mounting config drive with LABEL = %s", ConfigDriveLabel)
+	configDriveDir, err := mountConfigDrive()
+	if err != nil {
+		log.Printf("ERROR: %s", err)
+		os.Exit(1)
+	}
+
+	log.Print("Processing user-data")
+	err = processMetaData(configDriveDir)
+	if err != nil {
+		log.Printf("ERROR: %s", err)
+		os.Exit(1)
+	}
+
+	log.Print("Processing user-data")
+	err = processUserData(configDriveDir)
 	if err != nil {
 		log.Printf("ERROR: %s", err)
 		os.Exit(1)
 	}
 }
 
-func process() error {
+func mountConfigDrive() (string, error) {
 	// mount config drive
 	configDriveDir, err := os.MkdirTemp("", "configdrive")
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 	defer os.RemoveAll(configDriveDir)
 
 	output, err := exec.Command("mount", "-L", ConfigDriveLabel, configDriveDir).CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("could not mount config drive with label '%s': %s\n%s", ConfigDriveLabel, err, output)
+		return "", fmt.Errorf("could not mount config drive with label '%s': %s\n%s", ConfigDriveLabel, err, output)
 	}
 	defer exec.Command("umount", configDriveDir)
 
+	return configDriveDir, nil
+}
+
+func processMetaData(configDriveDir string) error {
+	// parse meta data
+	metaData, err := os.ReadFile(configDriveDir + "/" + MetaDataFile)
+	if err != nil {
+		return fmt.Errorf("could not read user-data file: %s", err)
+	}
+
+	var md MetaData
+	err = yaml.Unmarshal(metaData, md)
+	if err != nil {
+		return fmt.Errorf("could not parse meta-data file as YAML: %s", err)
+	}
+
+	if md.LocalHostname != "" {
+		output, err := exec.Command("hostnamectl", "set-hostname", md.LocalHostname).CombinedOutput()
+		if err != nil {
+			log.Printf("Error setting hostname '%s': %s\n%s", md.LocalHostname, err, output)
+		}
+	}
+
+	return nil
+}
+
+func processUserData(configDriveDir string) error {
 	// parse user data
 	userData, err := os.ReadFile(configDriveDir + "/" + UserDataFile)
 	if err != nil {
