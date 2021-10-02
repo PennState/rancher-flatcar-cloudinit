@@ -128,30 +128,32 @@ func processUserData(configDriveDir string) error {
 		return fmt.Errorf("could not parse user-data file as YAML: %s", err)
 	}
 
-	// create groups
-	for _, group := range cc.Groups {
-		output, err := exec.Command("groupadd", group).CombinedOutput()
-		if err != nil {
-			log.Printf("Error creating group '%s': %s\n%s", group, err, output)
-		}
-	}
+	/*
+		// create groups
+		for _, group := range cc.Groups {
+			output, err := exec.Command("groupadd", group).CombinedOutput()
+			if err != nil {
+				log.Printf("Error creating group '%s': %s\n%s", group, err, output)
+			}
+		}*/
 
 	// create users
 	var sudoers []string
 	for _, user := range cc.Users {
-		err = createUser(user)
-		if err != nil {
-			log.Printf("Error creating user: %s", err)
-		} else {
-			// set up ssh keys
-			err = AuthorizeSSHKeys(user.Name, "rancher-flatcar-cloudinit", user.SSHAuthorizedKeys)
+		/*
+			err = createUser(user)
 			if err != nil {
-				log.Printf("Error authorizing SSH keys for '%s': %s", user.Name, err)
-			}
+				log.Printf("Error creating user: %s", err)
+			}*/
 
-			// set up sudoers
-			sudoers = append(sudoers, user.Name+" "+user.Sudo)
+		// try to set up ssh keys
+		err = AuthorizeSSHKeys(user.Name, "rancher-flatcar-cloudinit", user.SSHAuthorizedKeys)
+		if err != nil {
+			log.Printf("Error authorizing SSH keys for '%s': %s", user.Name, err)
 		}
+
+		// set up sudoers
+		//sudoers = append(sudoers, user.Name+" "+user.Sudo)
 	}
 
 	// write sudoers
