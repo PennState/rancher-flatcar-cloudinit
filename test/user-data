@@ -1,0 +1,13 @@
+#cloud-config
+groups:
+- staff
+users:
+- create_groups: false
+  groups: staff
+  lock_passwd: true
+  name: docker
+  no_user_group: true
+  ssh_authorized_keys:
+  - |
+    ssh-rsa blahblahblah
+  sudo: ALL=(ALL) NOPASSWD:ALL
