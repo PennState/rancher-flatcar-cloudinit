@@ -96,7 +96,7 @@ func processMetaData(configDriveDir string) error {
 	}
 
 	var md MetaData
-	err = yaml.Unmarshal(metaData, md)
+	err = yaml.Unmarshal(metaData, &md)
 	if err != nil {
 		return fmt.Errorf("could not parse meta-data file as YAML: %s", err)
 	}
@@ -123,7 +123,7 @@ func processUserData(configDriveDir string) error {
 	}
 
 	var cc CloudConfig
-	err = yaml.Unmarshal(userData, cc)
+	err = yaml.Unmarshal(userData, &cc)
 	if err != nil {
 		return fmt.Errorf("could not parse user-data file as YAML: %s", err)
 	}
