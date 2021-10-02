@@ -56,7 +56,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Print("Processing user-data")
+	log.Print("Processing meta-data")
 	err = processMetaData(configDriveDir)
 	if err != nil {
 		log.Printf("ERROR: %s", err)
