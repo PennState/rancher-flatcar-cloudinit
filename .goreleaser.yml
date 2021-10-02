@@ -29,4 +29,6 @@ changelog:
     - '^ci:'
     - Merge pull request
     - Merge branch
+archives:
+- format: binary
 
