@@ -22,7 +22,7 @@ type CloudConfigUser struct {
 	CreateGroups      bool     `yaml:"create_groups"`
 	GECOS             string   `yaml:"gecos"`
 	LockPasswd        bool     `yaml:"lock_passwd"`
-	Groups            []string `yaml:"groups"`
+	Groups            string   `yaml:"groups"`
 	Homedir           string   `yaml:"homedir"`
 	Name              string   `yaml:"name"`
 	NoLogInit         bool     `yaml:"no_log_init"`
@@ -198,8 +198,8 @@ func createUser(u CloudConfigUser) error {
 		args = append(args, "--gid", u.PrimaryGroup)
 	}
 
-	if len(u.Groups) > 0 {
-		args = append(args, "--groups", strings.Join(u.Groups, ","))
+	if u.Groups != "" {
+		args = append(args, "--groups", u.Groups)
 	}
 
 	if u.NoUserGroup {
