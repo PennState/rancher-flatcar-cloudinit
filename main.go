@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"os/user"
 	"strings"
 	"unicode"
 
@@ -128,23 +129,25 @@ func processUserData(configDriveDir string) error {
 		return fmt.Errorf("could not parse user-data file as YAML: %s", err)
 	}
 
-	/*
-		// create groups
-		for _, group := range cc.Groups {
+	// create groups
+	for _, group := range cc.Groups {
+		if !groupExists(group) {
 			output, err := exec.Command("groupadd", group).CombinedOutput()
 			if err != nil {
 				log.Printf("Error creating group '%s': %s\n%s", group, err, output)
 			}
-		}*/
+		}
+	}
 
 	// create users
 	var sudoers []string
 	for _, user := range cc.Users {
-		/*
+		if !userExists(user.Name) {
 			err = createUser(user)
 			if err != nil {
 				log.Printf("Error creating user: %s", err)
-			}*/
+			}
+		}
 
 		// try to set up ssh keys
 		err = AuthorizeSSHKeys(user.Name, "rancher-flatcar-cloudinit", user.SSHAuthorizedKeys)
@@ -153,19 +156,20 @@ func processUserData(configDriveDir string) error {
 		}
 
 		// set up sudoers
-		//sudoers = append(sudoers, user.Name+" "+user.Sudo)
+		sudoers = append(sudoers, user.Name+" "+user.Sudo)
 	}
 
 	// write sudoers
 	if len(sudoers) > 0 {
-		f, err := os.OpenFile("/etc/sudoers.d/rancher-flatcar-cloudinit", os.O_CREATE, 0440)
+		f, err := os.OpenFile("/etc/sudoers.d/rancher-flatcar-cloudinit", os.O_CREATE|os.O_WRONLY, 0440)
 		if err != nil {
 			log.Printf("Error opening sudoers file: %s", err)
 		}
+		defer f.Close()
 
 		n, err := f.WriteString(strings.Join(sudoers, "\r\n"))
 		if err != nil {
-			log.Printf("Error writing suoers file: %s", err)
+			log.Printf("Error writing sudoers file: %s", err)
 		} else {
 			log.Printf("Wrote %d entries to sudoers file", n)
 		}
@@ -286,4 +290,14 @@ func AuthorizeSSHKeys(user string, keysName string, keys []string) error {
 	}
 
 	return nil
+}
+
+func userExists(u string) bool {
+	_, err := user.Lookup(u)
+	return err == nil
+}
+
+func groupExists(g string) bool {
+	_, err := user.LookupGroup(g)
+	return err == nil
 }
